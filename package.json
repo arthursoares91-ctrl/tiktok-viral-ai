@@ -1,0 +1,32 @@
+{
+  "name": "tiktok-viral-ai",
+  "version": "1.0.0",
+  "description": "Plataforma de IA para criação de conteúdo viral no TikTok — ideias, roteiros, legendas, hashtags, calendário, analisador viral e série conectada.",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve public -p 3000 --cors",
+    "build": "echo 'Static project — no build step needed'",
+    "start": "npx serve public -p 3000",
+    "lint": "echo 'No linting configured'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "tiktok",
+    "viral",
+    "ai",
+    "content",
+    "creator",
+    "supabase",
+    "anthropic"
+  ],
+  "author": "",
+  "license": "MIT"
+}
