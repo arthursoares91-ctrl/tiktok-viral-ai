@@ -3,7 +3,7 @@
   "name": "tiktok-viral-ai",
   "public": true,
   "buildCommand": null,
-  "outputDirectory": "public",
+  "outputDirectory": "."
   "installCommand": "npm install",
   "routes": [
     {
