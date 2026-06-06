@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TikTok Viral AI — App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --red: #FE2C55;
+  --red-dark: #d41f41;
+  --teal: #69C9D0;
+  --dark: #0F0F0F;
+  --dark2: #1A1A1A;
+  --dark3: #242424;
+  --dark4: #2E2E2E;
+  --gray: #888;
+  --gray2: #555;
+  --light: #F5F5F5;
+  --white: #fff;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--dark); color: var(--white); font-family: var(--font-body); font-size: 15px; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--dark2); }
+::-webkit-scrollbar-thumb { background: var(--dark4); border-radius: 3px; }
+
+/* ── AUTH OVERLAY ── */
+#auth-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--dark);
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.3s;
+}
+.auth-box {
+  background: var(--dark2);
+  border: 1px solid var(--dark4);
+  border-radius: 20px;
+  padding: 2.5rem;
+  width: 100%; max-width: 420px;
+  animation: slideUp 0.35s ease;
+}
+@keyframes slideUp { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform:none; } }
+.auth-logo { font-family: var(--font-display); font-weight: 800; font-size: 22px; text-align: center; margin-bottom: 1.5rem; }
+.auth-logo span { color: var(--red); }
+.auth-tabs { display: flex; gap: 4px; background: var(--dark3); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 1.5rem; }
+.auth-tab { flex: 1; text-align: center; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 14px; color: var(--gray); font-family: var(--font-display); font-weight: 600; transition: all 0.2s; }
+.auth-tab.active { background: var(--red); color: var(--white); }
+.auth-panel { display: none; }
+.auth-panel.active { display: block; }
+.field { margin-bottom: 14px; }
+.field label { font-size: 12px; color: var(--gray); margin-bottom: 5px; display: block; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+.field input {
+  width: 100%; background: var(--dark3); border: 1px solid var(--dark4); border-radius: var(--radius-sm);
+  padding: 11px 14px; color: var(--white); font-family: var(--font-body); font-size: 14px; outline: none; transition: border-color 0.2s;
+}
+.field input:focus { border-color: var(--red); }
+.field input::placeholder { color: var(--gray2); }
+.auth-btn {
+  width: 100%; padding: 13px; border-radius: var(--radius-sm);
+  background: var(--red); color: var(--white); font-family: var(--font-display); font-weight: 700; font-size: 15px;
+  border: none; cursor: pointer; transition: opacity 0.15s; margin-top: 4px;
+}
+.auth-btn:hover { opacity: 0.88; }
+.auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.auth-msg { font-size: 13px; text-align: center; margin-top: 10px; min-height: 18px; }
+.auth-msg.ok { color: #4ade80; }
+.auth-msg.err { color: #f87171; }
+.auth-divider { text-align: center; font-size: 12px; color: var(--gray); margin: 12px 0; position: relative; }
+.auth-divider::before, .auth-divider::after { content:''; position:absolute; top:50%; width:42%; height:1px; background:var(--dark4); }
+.auth-divider::before { left:0; } .auth-divider::after { right:0; }
+.link-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 13px; text-decoration: underline; font-family: var(--font-body); }
+.auth-demo { text-align: center; margin-top: 14px; }
+
+/* ── LAYOUT ── */
+#app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 240px; min-width: 240px; background: var(--dark2); border-right: 1px solid var(--dark3);
+  display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+}
+.sb-logo { padding: 1.5rem 1.25rem 1rem; font-family: var(--font-display); font-weight: 800; font-size: 18px; }
+.sb-logo span { color: var(--red); }
+.sb-user { margin: 0 1rem; padding: 12px; background: var(--dark3); border-radius: var(--radius-sm); margin-bottom: 1rem; }
+.sb-user-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-user-plan { font-size: 11px; color: var(--gray); margin-top: 2px; }
+.credits-bar { margin: 0 1rem 1rem; }
+.credits-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray); margin-bottom: 4px; }
+.credits-track { height: 4px; background: var(--dark4); border-radius: 999px; overflow: hidden; }
+.credits-fill { height: 100%; background: var(--red); border-radius: 999px; transition: width 0.3s; }
+.sb-nav { flex: 1; overflow-y: auto; padding: 0 8px; }
+.nav-section { font-size: 10px; color: var(--gray2); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 8px 4px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 14px; color: #aaa; transition: all 0.15s; margin-bottom: 2px;
+}
+.nav-item:hover { background: var(--dark3); color: var(--white); }
+.nav-item.active { background: rgba(254,44,85,0.12); color: var(--red); }
+.nav-item .icon { width: 18px; text-align: center; flex-shrink: 0; }
+.nav-badge { margin-left: auto; font-size: 10px; background: var(--dark4); color: var(--gray); padding: 2px 6px; border-radius: 999px; }
+.nav-badge.new { background: rgba(254,44,85,0.2); color: var(--red); }
+.sb-bottom { padding: 1rem; border-top: 1px solid var(--dark3); }
+.upgrade-card { background: linear-gradient(135deg, rgba(254,44,85,0.15), rgba(105,201,208,0.08)); border: 1px solid rgba(254,44,85,0.2); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; }
+.upgrade-card-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.upgrade-card-sub { font-size: 11px; color: var(--gray); margin-bottom: 8px; }
+.upgrade-btn { width: 100%; background: var(--red); color: var(--white); border: none; border-radius: 6px; padding: 8px; font-family: var(--font-display); font-weight: 700; font-size: 12px; cursor: pointer; transition: opacity 0.15s; }
+.upgrade-btn:hover { opacity: 0.85; }
+.logout-btn { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; color: var(--gray); cursor: pointer; font-size: 13px; font-family: var(--font-body); padding: 6px 4px; transition: color 0.15s; }
+.logout-btn:hover { color: var(--white); }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { height: 56px; border-bottom: 1px solid var(--dark3); display: flex; align-items: center; padding: 0 1.5rem; gap: 12px; flex-shrink: 0; }
+.topbar-title { font-family: var(--font-display); font-weight: 700; font-size: 18px; }
+.topbar-sub { font-size: 13px; color: var(--gray); }
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; }
+.content-area { flex: 1; overflow-y: auto; padding: 1.5rem; }
+
+/* ── PANELS ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── CARDS ── */
+.glass-card { background: var(--dark2); border: 1px solid var(--dark3); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+.card-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+.badge-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 600; }
+.badge-red { background: rgba(254,44,85,0.15); color: var(--red); border: 1px solid rgba(254,44,85,0.25); }
+.badge-teal { background: rgba(105,201,208,0.12); color: #4fc3ca; border: 1px solid rgba(105,201,208,0.2); }
+.badge-green { background: rgba(74,222,128,0.1); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+.badge-amber { background: rgba(251,191,36,0.1); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+
+/* ── FORM ── */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 11px; color: var(--gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; display: block; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; background: var(--dark3); border: 1px solid var(--dark4); border-radius: var(--radius-sm);
+  padding: 10px 13px; color: var(--white); font-family: var(--font-body); font-size: 14px; outline: none; transition: border-color 0.2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--red); }
+.form-input::placeholder, .form-textarea::placeholder { color: var(--gray2); }
+.form-select { appearance: none; cursor: pointer; }
+.form-textarea { resize: vertical; min-height: 90px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── BUTTONS ── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: var(--radius-sm); padding: 11px 18px; font-family: var(--font-display); font-weight: 700; font-size: 14px; cursor: pointer; border: none; transition: all 0.15s; white-space: nowrap; }
+.btn-red { background: var(--red); color: var(--white); }
+.btn-red:hover { opacity: 0.88; }
+.btn-red:active { opacity: 0.75; transform: scale(0.98); }
+.btn-red:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-ghost { background: var(--dark3); color: #aaa; border: 1px solid var(--dark4); }
+.btn-ghost:hover { color: var(--white); border-color: #555; }
+.btn-full { width: 100%; }
+.btn-sm { padding: 7px 12px; font-size: 12px; }
+
+/* ── OUTPUT ── */
+.output-block { background: var(--dark3); border: 1px solid var(--dark4); border-radius: var(--radius-sm); padding: 1rem; font-size: 14px; line-height: 1.7; white-space: pre-wrap; position: relative; }
+.output-copy { position: absolute; top: 8px; right: 8px; }
+.output-section { margin-bottom: 1rem; }
+.output-section-label { font-size: 11px; color: var(--red); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+
+/* ── IDEAS GRID ── */
+.ideas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 1rem; }
+.idea-card { background: var(--dark3); border: 1px solid var(--dark4); border-radius: var(--radius-sm); padding: 10px 12px; cursor: pointer; transition: all 0.15s; }
+.idea-card:hover { border-color: var(--red); background: var(--dark4); }
+.idea-num { font-size: 10px; color: var(--red); font-weight: 700; font-family: var(--font-display); margin-bottom: 3px; }
+.idea-text { font-size: 13px; color: #ccc; line-height: 1.4; }
+
+/* ── HASHTAGS ── */
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.hash-chip { background: rgba(254,44,85,0.08); color: var(--red); border: 1px solid rgba(254,44,85,0.2); border-radius: 999px; padding: 5px 13px; font-size: 12px; font-weight: 600; }
+
+/* ── CALENDAR GRID ── */
+.cal-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.cal-day-card { background: var(--dark3); border: 1px solid var(--dark4); border-radius: var(--radius-sm); padding: 8px; }
+.cal-day-num { font-family: var(--font-display); font-weight: 700; font-size: 12px; color: var(--red); margin-bottom: 3px; }
+.cal-day-format { font-size: 10px; color: var(--gray); margin-bottom: 2px; }
+.cal-day-theme { font-size: 11px; color: #ccc; line-height: 1.3; }
+
+/* ── HISTORY ── */
+.history-item { background: var(--dark2); border: 1px solid var(--dark3); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+.history-item:hover { border-color: var(--dark4); }
+.history-item-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.history-item-type { font-size: 10px; font-weight: 700; font-family: var(--font-display); }
+.history-item-date { font-size: 11px; color: var(--gray); margin-left: auto; }
+.history-item-preview { font-size: 13px; color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-empty { text-align: center; padding: 3rem; color: var(--gray); }
+.history-empty svg { opacity: 0.3; display: block; margin: 0 auto 12px; }
+
+/* ── ANALISADOR ── */
+.analysis-block { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 1rem; }
+.analysis-section { background: var(--dark3); border: 1px solid var(--dark4); border-radius: var(--radius-sm); padding: 12px; }
+.analysis-label { font-size: 11px; color: var(--red); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.analysis-content { font-size: 13px; color: #ccc; line-height: 1.6; }
+
+/* ── PLANS ── */
+.plans-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.plan-card { background: var(--dark2); border: 1px solid var(--dark3); border-radius: var(--radius); padding: 1.5rem; }
+.plan-card.featured { border-color: var(--red); position: relative; }
+.plan-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--red); color: var(--white); font-size: 11px; font-weight: 700; font-family: var(--font-display); padding: 3px 12px; border-radius: 999px; }
+.plan-name { font-family: var(--font-display); font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+.plan-price { font-family: var(--font-display); font-weight: 800; font-size: 28px; margin: 10px 0; }
+.plan-price span { font-size: 13px; font-weight: 400; color: var(--gray); }
+.plan-feature { font-size: 13px; color: #aaa; padding: 5px 0; display: flex; align-items: flex-start; gap: 7px; border-top: 1px solid var(--dark3); }
+.plan-feature .chk { color: #4ade80; flex-shrink: 0; margin-top: 2px; }
+.plan-feature .cross { color: var(--gray2); flex-shrink: 0; margin-top: 2px; }
+.plan-feature.disabled { opacity: 0.45; }
+.payment-methods { display: flex; gap: 6px; margin-top: 10px; justify-content: center; }
+.pay-badge { font-size: 10px; background: var(--dark3); border: 1px solid var(--dark4); border-radius: 4px; padding: 3px 8px; color: var(--gray); font-weight: 600; }
+
+/* ── PROFILE ── */
+.profile-section { max-width: 560px; }
+.profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 26px; color: var(--white); margin-bottom: 1rem; }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 1rem 0; }
+.stat-box { background: var(--dark3); border-radius: var(--radius-sm); padding: 14px; text-align: center; }
+.stat-num { font-family: var(--font-display); font-weight: 800; font-size: 22px; color: var(--red); }
+.stat-label { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+/* ── LOADING ── */
+.dots { display: inline-flex; gap: 4px; align-items: center; }
+.dots span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.4; animation: dp 1.2s ease-in-out infinite; }
+.dots span:nth-child(2) { animation-delay: .2s; }
+.dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes dp { 0%,100%{opacity:.2;transform:scale(.8)} 50%{opacity:1;transform:scale(1)} }
+
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 24px; right: 24px; background: var(--dark2); border: 1px solid var(--dark3); border-radius: var(--radius-sm); padding: 12px 18px; font-size: 13px; z-index: 999; transform: translateY(60px); opacity: 0; transition: all 0.25s; pointer-events: none; max-width: 280px; }
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.ok { border-color: rgba(74,222,128,0.4); color: #4ade80; }
+#toast.err { border-color: rgba(248,113,113,0.4); color: #f87171; }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 90; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.modal-overlay.hidden { display: none; }
+.modal { background: var(--dark2); border: 1px solid var(--dark3); border-radius: 16px; padding: 1.75rem; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto; }
+.modal-title { font-family: var(--font-display); font-weight: 700; font-size: 18px; margin-bottom: 1rem; }
+.modal-close { background: none; border: none; color: var(--gray); cursor: pointer; font-size: 20px; line-height: 1; float: right; margin-top: -4px; }
+
+/* ── PROGRESS ── */
+.prog-wrap { height: 3px; background: var(--dark4); border-radius: 999px; overflow: hidden; margin-top: 12px; display: none; }
+.prog-fill { height: 100%; background: var(--red); border-radius: 999px; width: 0; transition: width 0.3s; }
+
+/* ── SUPABASE NOTE ── */
+.config-note { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: #fbbf24; margin-bottom: 1rem; }
+.config-note code { background: var(--dark4); border-radius: 4px; padding: 1px 6px; font-size: 12px; color: var(--teal); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 760px) {
+  .sidebar { display: none; }
+  .form-row { grid-template-columns: 1fr; }
+  .plans-grid { grid-template-columns: 1fr; }
+  .ideas-grid { grid-template-columns: 1fr; }
+  .cal-grid { grid-template-columns: repeat(3, 1fr); }
+  .analysis-block { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ AUTH OVERLAY ═══════════ -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">TikTok <span>Viral</span> AI</div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="authTab('login')">Entrar</div>
+      <div class="auth-tab" onclick="authTab('signup')">Cadastrar</div>
+      <div class="auth-tab" onclick="authTab('reset')">Recuperar</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="auth-panel active" id="ap-login">
+      <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••••"></div>
+      <button class="auth-btn" onclick="doLogin()">Entrar na conta</button>
+      <p class="auth-msg" id="login-msg"></p>
+      <div class="auth-demo">
+        <button class="link-btn" onclick="demoLogin()">Entrar sem cadastro (modo demo)</button>
+      </div>
+    </div>
+
+    <!-- SIGNUP -->
+    <div class="auth-panel" id="ap-signup">
+      <div class="field"><label>Nome</label><input type="text" id="signup-name" placeholder="Seu nome"></div>
+      <div class="field"><label>Email</label><input type="email" id="signup-email" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="signup-pass" placeholder="Mínimo 6 caracteres"></div>
+      <button class="auth-btn" onclick="doSignup()">Criar conta grátis</button>
+      <p class="auth-msg" id="signup-msg"></p>
+    </div>
+
+    <!-- RESET -->
+    <div class="auth-panel" id="ap-reset">
+      <p style="font-size:13px;color:var(--gray);margin-bottom:1rem;">Digite seu email e enviaremos um link para redefinir sua senha.</p>
+      <div class="field"><label>Email</label><input type="email" id="reset-email" placeholder="seu@email.com"></div>
+      <button class="auth-btn" onclick="doReset()">Enviar link</button>
+      <p class="auth-msg" id="reset-msg"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ APP SHELL ═══════════ -->
+<div id="app" style="display:none">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-logo">TikTok <span>Viral</span> AI</div>
+    <div class="sb-user">
+      <div class="sb-user-name" id="sb-name">Usuário</div>
+      <div class="sb-user-plan" id="sb-plan">Plano Grátis • <span id="sb-credits">5</span> créditos hoje</div>
+    </div>
+    <div class="credits-bar">
+      <div class="credits-label"><span>Créditos hoje</span><span id="cred-count">5/5</span></div>
+      <div class="credits-track"><div class="credits-fill" id="cred-fill" style="width:100%"></div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-section">Ferramentas</div>
+      <div class="nav-item active" onclick="navigate('ideias')"><span class="icon">💡</span>Gerador de Ideias</div>
+      <div class="nav-item" onclick="navigate('roteiro')"><span class="icon">🎬</span>Roteiro</div>
+      <div class="nav-item" onclick="navigate('legenda')"><span class="icon">✍️</span>Legenda</div>
+      <div class="nav-item" onclick="navigate('hashtags')"><span class="icon">#</span>Hashtags</div>
+      <div class="nav-section">Avançado</div>
+      <div class="nav-item" onclick="navigate('calendario')"><span class="icon">📅</span>Calendário 30 dias<span class="nav-badge new">PRO</span></div>
+      <div class="nav-item" onclick="navigate('analisador')"><span class="icon">🔬</span>Analisador Viral<span class="nav-badge new">NOVO</span></div>
+      <div class="nav-item" onclick="navigate('serie')"><span class="icon">🔗</span>Série Conectada<span class="nav-badge new">PRO</span></div>
+      <div class="nav-section">Conta</div>
+      <div class="nav-item" onclick="navigate('historico')"><span class="icon">🕐</span>Histórico</div>
+      <div class="nav-item" onclick="navigate('planos')"><span class="icon">⭐</span>Planos</div>
+      <div class="nav-item" onclick="navigate('perfil')"><span class="icon">👤</span>Perfil</div>
+    </nav>
+    <div class="sb-bottom">
+      <div class="upgrade-card" id="upgrade-card">
+        <div class="upgrade-card-title">Upgrade para Pro</div>
+        <div class="upgrade-card-sub">Gerações ilimitadas por R$29/mês</div>
+        <button class="upgrade-btn" onclick="navigate('planos')">Ver planos →</button>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">🚪 Sair da conta</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Gerador de Ideias</div>
+        <div class="topbar-sub" id="topbar-sub">Crie 30 ideias virais em segundos</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost btn-sm" onclick="navigate('historico')">📋 Histórico</button>
+        <button class="btn btn-red btn-sm" onclick="navigate('planos')">⭐ Upgrade</button>
+      </div>
+    </div>
+    <div class="content-area">
+
+      <!-- ═══ IDEIAS ═══ -->
+      <div class="panel active" id="panel-ideias">
+        <div class="config-note" id="supabase-note" style="display:none">
+          ⚠️ <strong>Configure o Supabase:</strong> Edite as variáveis <code>SUPABASE_URL</code> e <code>SUPABASE_KEY</code> no topo do script para ativar autenticação real e histórico persistente.
+        </div>
+        <div class="glass-card">
+          <div class="card-title">💡 Gerar 30 Ideias Virais <span class="badge-pill badge-red">IA</span></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nicho</label>
+              <input class="form-input" id="nicho" placeholder="ex: fitness, finanças, culinária...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Público-alvo</label>
+              <input class="form-input" id="publico" placeholder="ex: mães, empreendedores...">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Objetivo</label>
+            <select class="form-select" id="objetivo">
+              <option value="engajamento">Aumentar engajamento</option>
+              <option value="seguidores">Ganhar seguidores</option>
+              <option value="vendas">Gerar vendas</option>
+              <option value="autoridade">Construir autoridade</option>
+              <option value="viralizar">Viralizar</option>
+            </select>
+          </div>
+          <button class="btn btn-red btn-full" id="btn-ideias" data-label="💡 Gerar 30 ideias" onclick="gerarIdeias()">💡 Gerar 30 ideias</button>
+          <div class="prog-wrap" id="prog-ideias"><div class="prog-fill" id="fill-ideias"></div></div>
+        </div>
+        <div id="res-ideias"></div>
+      </div>
+
+      <!-- ═══ ROTEIRO ═══ -->
+      <div class="panel" id="panel-roteiro">
+        <div class="glass-card">
+          <div class="card-title">🎬 Gerador de Roteiro <span class="badge-pill badge-red">IA</span></div>
+          <div class="form-group">
+            <label class="form-label">Ideia ou tema</label>
+            <textarea class="form-textarea" id="ideia-roteiro" placeholder="Cole uma ideia do gerador ou descreva seu tema..."></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Tom</label>
+              <select class="form-select" id="tom">
+                <option value="educativo">Educativo</option>
+                <option value="engraçado">Engraçado</option>
+                <option value="inspiracional">Inspiracional</option>
+                <option value="polêmico">Polêmico</option>
+                <option value="storytelling">Storytelling</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Duração</label>
+              <select class="form-select" id="duracao">
+                <option value="15s">15 segundos</option>
+                <option value="30s">30 segundos</option>
+                <option value="60s" selected>60 segundos</option>
+                <option value="3min">3 minutos</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-red btn-full" id="btn-roteiro" data-label="🎬 Gerar roteiro" onclick="gerarRoteiro()">🎬 Gerar roteiro</button>
+          <div class="prog-wrap" id="prog-roteiro"><div class="prog-fill" id="fill-roteiro"></div></div>
+        </div>
+        <div id="res-roteiro"></div>
+      </div>
+
+      <!-- ═══ LEGENDA ═══ -->
+      <div class="panel" id="panel-legenda">
+        <div class="glass-card">
+          <div class="card-title">✍️ Gerador de Legenda <span class="badge-pill badge-red">IA</span></div>
+          <div class="form-group">
+            <label class="form-label">Tema do vídeo</label>
+            <input class="form-input" id="tema-legenda" placeholder="Do que trata o vídeo?">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">CTA</label>
+              <select class="form-select" id="cta">
+                <option value="seguir o perfil">Seguir o perfil</option>
+                <option value="comentar">Comentar</option>
+                <option value="compartilhar">Compartilhar</option>
+                <option value="clicar no link da bio">Link na bio</option>
+                <option value="salvar">Salvar vídeo</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estilo</label>
+              <select class="form-select" id="estilo-legenda">
+                <option value="descontraído">Descontraído</option>
+                <option value="profissional">Profissional</option>
+                <option value="engraçado">Engraçado</option>
+                <option value="inspiracional">Inspiracional</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-red btn-full" id="btn-legenda" data-label="✍️ Gerar legenda" onclick="gerarLegenda()">✍️ Gerar legenda</button>
+          <div class="prog-wrap" id="prog-legenda"><div class="prog-fill" id="fill-legenda"></div></div>
+        </div>
+        <div id="res-legenda"></div>
+      </div>
+
+      <!-- ═══ HASHTAGS ═══ -->
+      <div class="panel" id="panel-hashtags">
+        <div class="glass-card">
+          <div class="card-title"># Gerador de Hashtags <span class="badge-pill badge-red">IA</span></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Tema / nicho</label>
+              <input class="form-input" id="tema-hash" placeholder="ex: receitas fit, skincare...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estratégia</label>
+              <select class="form-select" id="estrategia-hash">
+                <option value="mix equilibrado entre grandes, médias e nicho">Mix equilibrado</option>
+                <option value="foco em trending e viral">Foco em trending</option>
+                <option value="foco em nicho específico para conversão">Foco em nicho</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-red btn-full" id="btn-hashtags" data-label="# Gerar 15 hashtags" onclick="gerarHashtags()"># Gerar 15 hashtags</button>
+          <div class="prog-wrap" id="prog-hashtags"><div class="prog-fill" id="fill-hashtags"></div></div>
+        </div>
+        <div id="res-hashtags"></div>
+      </div>
+
+      <!-- ═══ CALENDÁRIO ═══ -->
+      <div class="panel" id="panel-calendario">
+        <div class="glass-card">
+          <div class="card-title">📅 Calendário de Conteúdo <span class="badge-pill badge-teal">30 Dias</span></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nicho</label>
+              <input class="form-input" id="nicho-cal" placeholder="ex: empreendedorismo, fitness...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Frequência</label>
+              <select class="form-select" id="freq-cal">
+                <option value="1 vídeo por dia">1x por dia</option>
+                <option value="2 vídeos por dia">2x por dia</option>
+                <option value="dias alternados">Dias alternados</option>
+                <option value="3 vezes por semana">3x por semana</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Objetivo principal</label>
+            <select class="form-select" id="obj-cal">
+              <option>Crescer seguidores</option>
+              <option>Vender produto/serviço</option>
+              <option>Posicionamento de autoridade</option>
+              <option>Entretenimento e engajamento</option>
+            </select>
+          </div>
+          <button class="btn btn-red btn-full" id="btn-cal" data-label="📅 Gerar calendário" onclick="gerarCalendario()">📅 Gerar calendário</button>
+          <div class="prog-wrap" id="prog-cal"><div class="prog-fill" id="fill-cal"></div></div>
+        </div>
+        <div id="res-cal"></div>
+      </div>
+
+      <!-- ═══ ANALISADOR VIRAL ═══ -->
+      <div class="panel" id="panel-analisador">
+        <div class="glass-card">
+          <div class="card-title">🔬 Analisador Viral <span class="badge-pill badge-green">NOVO</span></div>
+          <p style="font-size:13px;color:var(--gray);margin-bottom:1rem;">Cole o link, texto ou descrição de um vídeo viral. A IA vai dissecar o que o tornou viral.</p>
+          <div class="form-group">
+            <label class="form-label">Link ou texto do vídeo viral</label>
+            <textarea class="form-textarea" id="viral-input" style="min-height:110px" placeholder="Cole aqui o link, a transcrição ou a descrição do vídeo viral que você quer analisar..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seu nicho (para sugestão de recriação)</label>
+            <input class="form-input" id="viral-nicho" placeholder="ex: marketing digital, fitness, culinária...">
+          </div>
+          <button class="btn btn-red btn-full" id="btn-analisador" data-label="🔬 Analisar vídeo" onclick="analisarViral()">🔬 Analisar vídeo</button>
+          <div class="prog-wrap" id="prog-analisador"><div class="prog-fill" id="fill-analisador"></div></div>
+        </div>
+        <div id="res-analisador"></div>
+      </div>
+
+      <!-- ═══ SÉRIE CONECTADA ═══ -->
+      <div class="panel" id="panel-serie">
+        <div class="glass-card">
+          <div class="card-title">🔗 Série de 30 Dias Conectada <span class="badge-pill badge-amber">PRO</span></div>
+          <p style="font-size:13px;color:var(--gray);margin-bottom:1rem;">Gera 30 vídeos com narrativa sequencial — cada um conectado ao anterior, criando engajamento recorrente.</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Tema central da série</label>
+              <input class="form-input" id="serie-tema" placeholder="ex: Jornada de emagrecimento, Do zero ao primeiro cliente...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nicho</label>
+              <input class="form-input" id="serie-nicho" placeholder="ex: fitness, negócios, culinária...">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Formato da série</label>
+              <select class="form-select" id="serie-formato">
+                <option value="jornada pessoal com transformação">Jornada pessoal</option>
+                <option value="tutorial progressivo, do básico ao avançado">Tutorial progressivo</option>
+                <option value="desafio com updates diários">Desafio</option>
+                <option value="série educacional com lições diárias">Série educacional</option>
+                <option value="storytelling de negócio real">Storytelling de negócio</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Público</label>
+              <input class="form-input" id="serie-publico" placeholder="ex: iniciantes em finanças...">
+            </div>
+          </div>
+          <button class="btn btn-red btn-full" id="btn-serie" data-label="🔗 Gerar série de 30 dias" onclick="gerarSerie()">🔗 Gerar série de 30 dias</button>
+          <div class="prog-wrap" id="prog-serie"><div class="prog-fill" id="fill-serie"></div></div>
+        </div>
+        <div id="res-serie"></div>
+      </div>
+
+      <!-- ═══ HISTÓRICO ═══ -->
+      <div class="panel" id="panel-historico">
+        <div class="glass-card">
+          <div class="card-title">🕐 Histórico de Gerações</div>
+          <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap" id="hist-filters">
+            <button class="btn btn-ghost btn-sm active-filter" onclick="filterHistory('all',this)">Todos</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterHistory('ideias',this)">Ideias</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterHistory('roteiro',this)">Roteiros</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterHistory('legenda',this)">Legendas</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterHistory('hashtags',this)">Hashtags</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterHistory('analisador',this)">Análises</button>
+          </div>
+          <div id="history-list"></div>
+        </div>
+      </div>
+
+      <!-- ═══ PLANOS ═══ -->
+      <div class="panel" id="panel-planos">
+        <div class="glass-card">
+          <div class="card-title">⭐ Planos e Preços</div>
+          <div class="plans-grid">
+            <div class="plan-card">
+              <div class="plan-name">Grátis</div>
+              <div class="plan-price">R$0<span>/mês</span></div>
+              <div class="plan-feature"><span class="chk">✓</span>5 gerações por dia</div>
+              <div class="plan-feature"><span class="chk">✓</span>Ideias, roteiros, legendas e hashtags</div>
+              <div class="plan-feature disabled"><span class="cross">✗</span>Calendário de conteúdo</div>
+              <div class="plan-feature disabled"><span class="cross">✗</span>Analisador Viral</div>
+              <div class="plan-feature disabled"><span class="cross">✗</span>Série conectada</div>
+              <div class="plan-feature disabled"><span class="cross">✗</span>Histórico ilimitado</div>
+              <button class="btn btn-ghost btn-full" style="margin-top:1rem" disabled>Plano atual</button>
+            </div>
+            <div class="plan-card featured">
+              <div class="plan-badge">Mais popular</div>
+              <div class="plan-name">Pro</div>
+              <div class="plan-price">R$29<span>/mês</span></div>
+              <div class="plan-feature"><span class="chk">✓</span>Gerações ilimitadas</div>
+              <div class="plan-feature"><span class="chk">✓</span>Todas as ferramentas básicas</div>
+              <div class="plan-feature"><span class="chk">✓</span>Calendário de conteúdo</div>
+              <div class="plan-feature"><span class="chk">✓</span>Analisador Viral</div>
+              <div class="plan-feature"><span class="chk">✓</span>Histórico ilimitado</div>
+              <div class="plan-feature disabled"><span class="cross">✗</span>Série conectada 30 dias</div>
+              <button class="btn btn-red btn-full" style="margin-top:1rem" onclick="assinar('pro')">Assinar Pro →</button>
+              <div class="payment-methods">
+                <span class="pay-badge">💳 Stripe</span>
+                <span class="pay-badge">💚 Mercado Pago</span>
+                <span class="pay-badge">📄 PIX</span>
+              </div>
+            </div>
+            <div class="plan-card">
+              <div class="plan-name">Premium</div>
+              <div class="plan-price">R$49<span>/mês</span></div>
+              <div class="plan-feature"><span class="chk">✓</span>Tudo do Pro</div>
+              <div class="plan-feature"><span class="chk">✓</span>Série conectada 30 dias</div>
+              <div class="plan-feature"><span class="chk">✓</span>Tendências em tempo real</div>
+              <div class="plan-feature"><span class="chk">✓</span>Templates virais exclusivos</div>
+              <div class="plan-feature"><span class="chk">✓</span>Suporte prioritário</div>
+              <button class="btn btn-full" style="margin-top:1rem;background:#1A1A1A;color:var(--teal);border:1px solid rgba(105,201,208,0.3)" onclick="assinar('premium')">Assinar Premium →</button>
+              <div class="payment-methods">
+                <span class="pay-badge">💳 Stripe</span>
+                <span class="pay-badge">💚 Mercado Pago</span>
+                <span class="pay-badge">📄 PIX</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Integration guides -->
+        <div class="glass-card" style="margin-top:1rem">
+          <div class="card-title">🔧 Guia de Integração de Pagamentos</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="background:var(--dark3);border-radius:var(--radius-sm);padding:1rem">
+              <div style="font-family:var(--font-display);font-weight:700;margin-bottom:6px">Stripe</div>
+              <div style="font-size:12px;color:var(--gray);line-height:1.6">
+                1. Crie conta em <strong style="color:#aaa">stripe.com</strong><br>
+                2. Crie produtos/preços mensais<br>
+                3. Configure webhook <code style="background:var(--dark4);padding:1px 5px;border-radius:3px;font-size:11px">/api/webhook</code><br>
+                4. Use Stripe Checkout ou Payment Links<br>
+                5. Salve <code style="background:var(--dark4);padding:1px 5px;border-radius:3px;font-size:11px">subscription_id</code> no Supabase
+              </div>
+            </div>
+            <div style="background:var(--dark3);border-radius:var(--radius-sm);padding:1rem">
+              <div style="font-family:var(--font-display);font-weight:700;margin-bottom:6px">Mercado Pago</div>
+              <div style="font-size:12px;color:var(--gray);line-height:1.6">
+                1. Crie conta em <strong style="color:#aaa">mercadopago.com.br</strong><br>
+                2. Use API de Assinaturas (Subscriptions)<br>
+                3. Configure PIX + Cartão<br>
+                4. Webhook em <code style="background:var(--dark4);padding:1px 5px;border-radius:3px;font-size:11px">/api/mp-webhook</code><br>
+                5. Atualize plano no Supabase ao receber pagamento
+              </div>
+            </div>
+          </div>
+          <div style="background:var(--dark3);border-radius:var(--radius-sm);padding:1rem;margin-top:10px">
+            <div style="font-family:var(--font-display);font-weight:700;margin-bottom:6px">Schema Supabase recomendado</div>
+            <pre style="font-size:11px;color:#aaa;line-height:1.7;overflow-x:auto">-- profiles (extende auth.users)
+CREATE TABLE profiles (
+  id UUID REFERENCES auth.users PRIMARY KEY,
+  name TEXT,
+  plan TEXT DEFAULT 'free',       -- free | pro | premium
+  credits_today INT DEFAULT 5,
+  credits_reset_at TIMESTAMPTZ,
+  stripe_customer_id TEXT,
+  mp_subscription_id TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- generations (histórico)
+CREATE TABLE generations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  type TEXT,                      -- ideias|roteiro|legenda|hashtags|analisador|serie
+  input JSONB,
+  output TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PERFIL ═══ -->
+      <div class="panel" id="panel-perfil">
+        <div class="glass-card profile-section">
+          <div class="card-title">👤 Meu Perfil</div>
+          <div class="profile-avatar" id="profile-avatar">?</div>
+          <div class="stats-row">
+            <div class="stat-box">
+              <div class="stat-num" id="stat-total">0</div>
+              <div class="stat-label">Gerações totais</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-num" id="stat-today">0</div>
+              <div class="stat-label">Hoje</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-num" id="stat-cred">5</div>
+              <div class="stat-label">Créditos restantes</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nome</label>
+            <input class="form-input" id="profile-name" placeholder="Seu nome">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="form-input" id="profile-email" disabled style="opacity:0.6">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nova senha</label>
+            <input class="form-input" type="password" id="profile-pass" placeholder="Deixe em branco para manter a atual">
+          </div>
+          <button class="btn btn-red" onclick="updateProfile()">Salvar alterações</button>
+          <p id="profile-msg" style="font-size:13px;margin-top:8px;min-height:18px"></p>
+        </div>
+      </div>
+
+    </div><!-- /content-area -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- HISTORY DETAIL MODAL -->
+<div class="modal-overlay hidden" id="hist-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title" id="modal-title">Detalhe</div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIGURAÇÃO — substitua com seus valores
+// ══════════════════════════════════════════
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+
+// ══════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════
+let supabase = null;
+let currentUser = null;
+let userProfile = { name: 'Usuário Demo', plan: 'free', credits_today: 5 };
+let history = [];
+let historyFilter = 'all';
+let isDemoMode = false;
+const DAILY_LIMIT = 5;
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  const isConfigured = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
+  if (isConfigured) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    checkSession();
+  } else {
+    document.getElementById('supabase-note').style.display = 'block';
+  }
+});
+
+async function checkSession() {
+  if (!supabase) return;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadProfile();
+    showApp();
+  }
+}
+
+// ══════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════
+function authTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['login','signup','reset'][i] === tab);
+  });
+  document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('ap-' + tab).classList.add('active');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const msg = document.getElementById('login-msg');
+  if (!email || !pass) { msg.className='auth-msg err'; msg.textContent='Preencha todos os campos.'; return; }
+  if (!supabase) { demoLogin(); return; }
+  msg.className='auth-msg'; msg.textContent='Entrando...';
+  const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+  if (error) { msg.className='auth-msg err'; msg.textContent=error.message; return; }
+  const { data: { session } } = await supabase.auth.getSession();
+  currentUser = session.user;
+  await loadProfile();
+  showApp();
+}
+
+async function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-pass').value;
+  const msg = document.getElementById('signup-msg');
+  if (!name || !email || !pass) { msg.className='auth-msg err'; msg.textContent='Preencha todos os campos.'; return; }
+  if (pass.length < 6) { msg.className='auth-msg err'; msg.textContent='Senha precisa ter ao menos 6 caracteres.'; return; }
+  if (!supabase) { demoLogin(); return; }
+  msg.className='auth-msg'; msg.textContent='Criando conta...';
+  const { data, error } = await supabase.auth.signUp({ email, password: pass, options: { data: { name } } });
+  if (error) { msg.className='auth-msg err'; msg.textContent=error.message; return; }
+  if (data.user && !data.session) {
+    msg.className='auth-msg ok'; msg.textContent='Confirme seu email para entrar!'; return;
+  }
+  currentUser = data.user;
+  await supabase.from('profiles').upsert({ id: currentUser.id, name, plan: 'free', credits_today: 5 });
+  await loadProfile();
+  showApp();
+}
+
+async function doReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  const msg = document.getElementById('reset-msg');
+  if (!email) { msg.className='auth-msg err'; msg.textContent='Informe seu email.'; return; }
+  if (!supabase) { msg.className='auth-msg ok'; msg.textContent='(Demo) Link enviado para '+email; return; }
+  msg.className='auth-msg'; msg.textContent='Enviando...';
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if (error) { msg.className='auth-msg err'; msg.textContent=error.message; return; }
+  msg.className='auth-msg ok'; msg.textContent='Link enviado! Verifique sua caixa de entrada.';
+}
+
+function demoLogin() {
+  isDemoMode = true;
+  currentUser = { id: 'demo', email: 'demo@tiktokviralai.com' };
+  userProfile = { name: 'Usuário Demo', plan: 'free', credits_today: 5 };
+  loadLocalHistory();
+  showApp();
+}
+
+async function doLogout() {
+  if (supabase && !isDemoMode) await supabase.auth.signOut();
+  currentUser = null; isDemoMode = false;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('auth-overlay').style.opacity = '1';
+}
+
+// ══════════════════════════════════════════
+// PROFILE & UI
+// ══════════════════════════════════════════
+async function loadProfile() {
+  if (!supabase || isDemoMode) return;
+  const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (data) {
+    userProfile = data;
+    // Reset créditos se novo dia
+    const lastReset = data.credits_reset_at ? new Date(data.credits_reset_at) : null;
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (!lastReset || lastReset < today) {
+      await supabase.from('profiles').update({ credits_today: DAILY_LIMIT, credits_reset_at: new Date().toISOString() }).eq('id', currentUser.id);
+      userProfile.credits_today = DAILY_LIMIT;
+    }
+  }
+  const { data: hist } = await supabase.from('generations').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(100);
+  history = hist || [];
+}
+
+function showApp() {
+  document.getElementById('auth-overlay').style.opacity = '0';
+  setTimeout(() => { document.getElementById('auth-overlay').style.display = 'none'; }, 300);
+  document.getElementById('app').style.display = 'flex';
+  updateUI();
+  renderHistory();
+  updateStats();
+}
+
+function updateUI() {
+  const name = userProfile.name || currentUser?.email?.split('@')[0] || 'Usuário';
+  document.getElementById('sb-name').textContent = name;
+  const planLabels = { free: 'Plano Grátis', pro: 'Plano Pro', premium: 'Plano Premium' };
+  const cred = userProfile.credits_today ?? DAILY_LIMIT;
+  document.getElementById('sb-plan').innerHTML = `${planLabels[userProfile.plan] || 'Plano Grátis'} • <span id="sb-credits">${cred}</span> créditos hoje`;
+  document.getElementById('cred-count').textContent = `${cred}/${DAILY_LIMIT}`;
+  document.getElementById('cred-fill').style.width = `${(cred/DAILY_LIMIT)*100}%`;
+  document.getElementById('profile-name').value = name;
+  document.getElementById('profile-email').value = currentUser?.email || '';
+  document.getElementById('profile-avatar').textContent = name.charAt(0).toUpperCase();
+  document.getElementById('stat-cred').textContent = cred;
+  if (userProfile.plan !== 'free') document.getElementById('upgrade-card').style.display = 'none';
+}
+
+function updateStats() {
+  const today = new Date().toDateString();
+  const todayCount = history.filter(h => new Date(h.created_at).toDateString() === today).length;
+  document.getElementById('stat-total').textContent = history.length;
+  document.getElementById('stat-today').textContent = todayCount;
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+const titles = {
+  ideias: ['Gerador de Ideias','Crie 30 ideias virais em segundos'],
+  roteiro: ['Gerador de Roteiro','Gancho, desenvolvimento e CTA prontos'],
+  legenda: ['Gerador de Legenda','Legenda com emojis e CTA otimizado'],
+  hashtags: ['Gerador de Hashtags','15 hashtags estratégicas para seu nicho'],
+  calendario: ['Calendário de Conteúdo','Planejamento de 30 dias estruturado'],
+  analisador: ['Analisador Viral 🔬','Descubra o que tornaram um vídeo viral'],
+  serie: ['Série Conectada 🔗','30 vídeos com narrativa sequencial'],
+  historico: ['Histórico','Todas as suas gerações salvas'],
+  planos: ['Planos e Preços','Escolha o melhor plano para você'],
+  perfil: ['Meu Perfil','Gerencie sua conta e configurações'],
+};
+
+function navigate(panel) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event?.target?.closest('.nav-item')?.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + panel).classList.add('active');
+  const [t, s] = titles[panel] || ['',''];
+  document.getElementById('topbar-title').textContent = t;
+  document.getElementById('topbar-sub').textContent = s;
+  if (panel === 'historico') renderHistory();
+  if (panel === 'perfil') updateStats();
+}
+
+// ══════════════════════════════════════════
+// CREDITS
+// ══════════════════════════════════════════
+async function useCredit() {
+  if (userProfile.plan !== 'free') return true; // unlimited
+  const cred = userProfile.credits_today ?? DAILY_LIMIT;
+  if (cred <= 0) {
+    toast('❌ Você atingiu o limite diário. Faça upgrade para gerações ilimitadas!', 'err');
+    navigate('planos');
+    return false;
+  }
+  userProfile.credits_today = cred - 1;
+  if (supabase && !isDemoMode) {
+    await supabase.from('profiles').update({ credits_today: userProfile.credits_today }).eq('id', currentUser.id);
+  }
+  updateUI();
+  return true;
+}
+
+// ══════════════════════════════════════════
+// SAVE TO HISTORY
+// ══════════════════════════════════════════
+async function saveToHistory(type, input, output) {
+  const entry = { id: Date.now().toString(), type, input, output, created_at: new Date().toISOString(), user_id: currentUser?.id };
+  history.unshift(entry);
+  if (supabase && !isDemoMode && currentUser) {
+    await supabase.from('generations').insert({ user_id: currentUser.id, type, input, output });
+  } else {
+    // localStorage fallback for demo
+    const stored = JSON.parse(localStorage.getItem('tiktok_history') || '[]');
+    stored.unshift(entry);
+    localStorage.setItem('tiktok_history', JSON.stringify(stored.slice(0,100)));
+  }
+  updateStats();
+}
+
+function loadLocalHistory() {
+  history = JSON.parse(localStorage.getItem('tiktok_history') || '[]');
+}
+
+// ══════════════════════════════════════════
+// CLAUDE API CALL
+// ══════════════════════════════════════════
+async function callClaude(prompt, btnId, progId, fillId) {
+  const btn = document.getElementById(btnId);
+  const prog = document.getElementById(progId);
+  const fill = document.getElementById(fillId);
+  const label = btn.getAttribute('data-label');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="dots"><span></span><span></span><span></span></span> Gerando...';
+  prog.style.display = 'block';
+  let pct = 0;
+  const ticker = setInterval(() => { pct = Math.min(pct + 2.5, 90); fill.style.width = pct + '%'; }, 200);
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    clearInterval(ticker); fill.style.width = '100%';
+    setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0'; }, 500);
+    btn.disabled = false; btn.innerHTML = label;
+    return (data.content || []).map(i => i.text || '').join('');
+  } catch(e) {
+    clearInterval(ticker); prog.style.display = 'none';
+    btn.disabled = false; btn.innerHTML = label;
+    toast('Erro ao conectar à IA. Tente novamente.', 'err');
+    return null;
+  }
+}
+
+function parseJSON(text) {
+  try { return JSON.parse(text.replace(/```json|```/g,'').trim()); }
+  catch { return null; }
+}
+
+// ══════════════════════════════════════════
+// GERADORES
+// ══════════════════════════════════════════
+async function gerarIdeias() {
+  if (!await useCredit()) return;
+  const nicho = document.getElementById('nicho').value || 'geral';
+  const pub = document.getElementById('publico').value || 'geral';
+  const obj = document.getElementById('objetivo').value;
+  const prompt = `Especialista em conteúdo viral para TikTok. Gere exatamente 30 ideias de vídeos virais para TikTok. Responda APENAS em JSON sem backticks: {"ideias":["ideia 1","ideia 2",...]} Nicho: ${nicho}. Público: ${pub}. Objetivo: ${obj}. Cada ideia máximo 12 palavras, criativa, específica e com potencial viral.`;
+  const text = await callClaude(prompt, 'btn-ideias', 'prog-ideias', 'fill-ideias');
+  if (!text) return;
+  const data = parseJSON(text);
+  const ideias = data?.ideias || [];
+  if (!ideias.length) { document.getElementById('res-ideias').innerHTML = `<div class="output-block">${text}</div>`; return; }
+  await saveToHistory('ideias', { nicho, publico: pub, objetivo: obj }, JSON.stringify(ideias));
+  let html = `<div class="glass-card"><div class="card-title">💡 30 Ideias Geradas <span class="badge-pill badge-green">${ideias.length} ideias</span></div><div class="ideas-grid">`;
+  ideias.forEach((idea,i) => {
+    html += `<div class="idea-card" onclick="usarIdeia('${idea.replace(/'/g,"\\'")}')"><div class="idea-num">#${i+1}</div><div class="idea-text">${idea}</div></div>`;
+  });
+  html += `</div><p style="font-size:12px;color:var(--gray);margin-top:10px;text-align:center">Clique em uma ideia para usar no Roteiro</p></div>`;
+  document.getElementById('res-ideias').innerHTML = html;
+  toast('30 ideias geradas e salvas no histórico! 🎉', 'ok');
+}
+
+function usarIdeia(ideia) {
+  document.getElementById('ideia-roteiro').value = ideia;
+  navigate('roteiro');
+  document.querySelectorAll('.nav-item')[1].classList.add('active');
+}
+
+async function gerarRoteiro() {
+  if (!await useCredit()) return;
+  const ideia = document.getElementById('ideia-roteiro').value || 'conteúdo viral';
+  const tom = document.getElementById('tom').value;
+  const dur = document.getElementById('duracao').value;
+  const prompt = `Roteirista especialista em TikTok viral. Crie um roteiro completo. Responda APENAS em JSON sem backticks: {"gancho":"gancho de 3 segundos irresistível","desenvolvimento":"desenvolvimento em 4-5 frases naturais","cta":"CTA final poderoso","dica":"1 dica de produção"} Ideia: ${ideia}. Tom: ${tom}. Duração: ${dur}. Use linguagem brasileira natural, coloquial e envolvente.`;
+  const text = await callClaude(prompt, 'btn-roteiro', 'prog-roteiro', 'fill-roteiro');
+  if (!text) return;
+  const d = parseJSON(text);
+  if (!d) { document.getElementById('res-roteiro').innerHTML = `<div class="output-block">${text}</div>`; return; }
+  await saveToHistory('roteiro', { ideia, tom, duracao: dur }, text);
+  document.getElementById('res-roteiro').innerHTML = `
+  <div class="glass-card">
+    <div class="card-title">🎬 Roteiro Pronto</div>
+    <div class="output-section">
+      <div class="output-section-label">🎣 GANCHO (3 segundos)</div>
+      <div class="output-block">${d.gancho || ''}<button class="btn btn-ghost btn-sm output-copy" onclick="copy('${(d.gancho||'').replace(/'/g,"\\'")}')">📋 Copiar</button></div>
+    </div>
+    <div class="output-section">
+      <div class="output-section-label">📱 DESENVOLVIMENTO</div>
+      <div class="output-block">${d.desenvolvimento || ''}<button class="btn btn-ghost btn-sm output-copy" onclick="copy('${(d.desenvolvimento||'').replace(/'/g,"\\'")}')">📋 Copiar</button></div>
+    </div>
+    <div class="output-section">
+      <div class="output-section-label">🚀 CTA</div>
+      <div class="output-block">${d.cta || ''}</div>
+    </div>
+    ${d.dica ? `<div class="output-section"><div class="output-section-label">💡 DICA DE PRODUÇÃO</div><div class="output-block" style="border-color:rgba(105,201,208,0.25)">${d.dica}</div></div>` : ''}
+  </div>`;
+  toast('Roteiro salvo no histórico! ✍️', 'ok');
+}
+
+async function gerarLegenda() {
+  if (!await useCredit()) return;
+  const tema = document.getElementById('tema-legenda').value || 'conteúdo';
+  const cta = document.getElementById('cta').value;
+  const estilo = document.getElementById('estilo-legenda').value;
+  const prompt = `Especialista em legendas virais para TikTok. Crie uma legenda para: ${tema}. CTA: ${cta}. Estilo: ${estilo}. Responda APENAS em JSON sem backticks: {"legenda":"legenda completa com emojis, use \\n para quebras de linha","cta_final":"frase CTA"} Máximo 150 palavras, linguagem brasileira autêntica.`;
+  const text = await callClaude(prompt, 'btn-legenda', 'prog-legenda', 'fill-legenda');
+  if (!text) return;
+  const d = parseJSON(text);
+  const legenda = d?.legenda ? d.legenda.replace(/\\n/g,'\n') : text;
+  await saveToHistory('legenda', { tema, cta, estilo }, legenda);
+  document.getElementById('res-legenda').innerHTML = `
+  <div class="glass-card">
+    <div class="card-title" style="display:flex;justify-content:space-between">✍️ Legenda Pronta<button class="btn btn-ghost btn-sm" onclick="copy('${legenda.replace(/'/g,"\\'")}')">📋 Copiar tudo</button></div>
+    <div class="output-block" style="white-space:pre-wrap">${legenda}</div>
+  </div>`;
+  toast('Legenda salva no histórico! ✍️', 'ok');
+}
+
+async function gerarHashtags() {
+  if (!await useCredit()) return;
+  const tema = document.getElementById('tema-hash').value || 'conteúdo';
+  const est = document.getElementById('estrategia-hash').value;
+  const prompt = `Especialista em hashtags para TikTok. Gere exatamente 15 hashtags para: ${tema}. Estratégia: ${est}. Responda APENAS em JSON sem backticks: {"hashtags":["#tag1","#tag2",...]} Mix de português e inglês quando fizer sentido. Sem espaços.`;
+  const text = await callClaude(prompt, 'btn-hashtags', 'prog-hashtags', 'fill-hashtags');
+  if (!text) return;
+  const d = parseJSON(text);
+  const tags = d?.hashtags || [];
+  await saveToHistory('hashtags', { tema, estrategia: est }, tags.join(' '));
+  let html = `<div class="glass-card"><div class="card-title" style="display:flex;justify-content:space-between"># 15 Hashtags<button class="btn btn-ghost btn-sm" onclick="copy('${tags.join(' ').replace(/'/g,"\\'")}')">📋 Copiar</button></div><div class="tag-cloud">`;
+  tags.forEach(t => { html += `<span class="hash-chip">${t}</span>`; });
+  html += `</div></div>`;
+  document.getElementById('res-hashtags').innerHTML = html;
+  toast('Hashtags salvas no histórico! #️⃣', 'ok');
+}
+
+async function gerarCalendario() {
+  if (!await useCredit()) return;
+  const nicho = document.getElementById('nicho-cal').value || 'geral';
+  const freq = document.getElementById('freq-cal').value;
+  const obj = document.getElementById('obj-cal').value;
+  const prompt = `Planejador de conteúdo TikTok. Crie calendário de 30 dias. Responda APENAS em JSON sem backticks: {"dias":[{"dia":1,"tema":"tema curto (max 8 palavras)","formato":"formato ex: Tutorial|POV|Trend|Story|Lista|Dueto","hook":"gancho de 5 palavras"},...]}} Nicho: ${nicho}. Frequência: ${freq}. Objetivo: ${obj}. Todos os 30 dias.`;
+  const text = await callClaude(prompt, 'btn-cal', 'prog-cal', 'fill-cal');
+  if (!text) return;
+  const d = parseJSON(text);
+  const dias = d?.dias || [];
+  await saveToHistory('calendario', { nicho, freq, obj }, text);
+  let html = `<div class="glass-card"><div class="card-title">📅 Calendário 30 Dias — ${nicho}</div><div class="cal-grid">`;
+  dias.slice(0,30).forEach(dia => {
+    html += `<div class="cal-day-card"><div class="cal-day-num">Dia ${dia.dia}</div><div class="cal-day-format">${dia.formato||''}</div><div class="cal-day-theme">${dia.tema||''}</div></div>`;
+  });
+  html += `</div></div>`;
+  document.getElementById('res-cal').innerHTML = html;
+  toast('Calendário de 30 dias salvo! 📅', 'ok');
+}
+
+async function analisarViral() {
+  if (!await useCredit()) return;
+  const input = document.getElementById('viral-input').value;
+  const nicho = document.getElementById('viral-nicho').value || 'geral';
+  if (!input.trim()) { toast('Cole o link ou texto do vídeo viral.', 'err'); return; }
+  const prompt = `Especialista em psicologia viral e TikTok. Analise este conteúdo e disseque o que o torna viral. Responda APENAS em JSON sem backticks: {"gancho":"análise do gancho usado","estrutura":"estrutura narrativa identificada","emocoes":["emoção1","emoção2","emoção3"],"cta":"análise do CTA","porque_viral":"1-2 frases sobre o motivo viral","recriar_em_${nicho.replace(/\s/g,'_')}":"como recriar esta ideia no nicho informado","score_viral":"nota de 1-10 com justificativa"} Conteúdo: ${input}`;
+  const text = await callClaude(prompt, 'btn-analisador', 'prog-analisador', 'fill-analisador');
+  if (!text) return;
+  const d = parseJSON(text);
+  if (!d) { document.getElementById('res-analisador').innerHTML = `<div class="output-block">${text}</div>`; return; }
+  await saveToHistory('analisador', { input: input.substring(0,100), nicho }, text);
+  const recriarKey = Object.keys(d).find(k => k.startsWith('recriar'));
+  document.getElementById('res-analisador').innerHTML = `
+  <div class="glass-card">
+    <div class="card-title">🔬 Análise Viral Completa</div>
+    <div class="analysis-block">
+      <div class="analysis-section">
+        <div class="analysis-label">🎣 Gancho</div>
+        <div class="analysis-content">${d.gancho||''}</div>
+      </div>
+      <div class="analysis-section">
+        <div class="analysis-label">📐 Estrutura</div>
+        <div class="analysis-content">${d.estrutura||''}</div>
+      </div>
+      <div class="analysis-section">
+        <div class="analysis-label">❤️ Emoções ativadas</div>
+        <div class="analysis-content">${(d.emocoes||[]).map(e=>`<span class="hash-chip">${e}</span>`).join('')}</div>
+      </div>
+      <div class="analysis-section">
+        <div class="analysis-label">🚀 CTA</div>
+        <div class="analysis-content">${d.cta||''}</div>
+      </div>
+    </div>
+    <div class="output-section" style="margin-top:10px">
+      <div class="output-section-label">⚡ Por que viralizou</div>
+      <div class="output-block">${d.porque_viral||''}</div>
+    </div>
+    ${recriarKey ? `<div class="output-section"><div class="output-section-label">🔄 Como recriar no nicho: ${nicho}</div><div class="output-block">${d[recriarKey]||''}</div></div>` : ''}
+    <div style="text-align:center;margin-top:8px"><span class="badge-pill badge-${d.score_viral?.startsWith('1') || parseInt(d.score_viral)>=8 ? 'green' : 'amber'}">Score viral: ${d.score_viral||'?'}/10</span></div>
+  </div>`;
+  toast('Análise salva no histórico! 🔬', 'ok');
+}
+
+async function gerarSerie() {
+  if (!await useCredit()) return;
+  const tema = document.getElementById('serie-tema').value || 'transformação pessoal';
+  const nicho = document.getElementById('serie-nicho').value || 'geral';
+  const formato = document.getElementById('serie-formato').value;
+  const pub = document.getElementById('serie-publico').value || 'geral';
+  const prompt = `Estrategista de conteúdo TikTok. Crie uma série de 30 vídeos CONECTADOS onde cada episódio leva ao próximo e cria curiosidade. Responda APENAS em JSON sem backticks: {"serie_nome":"nome da série","premissa":"premissa em 1 frase","episodios":[{"ep":1,"titulo":"título","tema":"tema","gancho":"gancho inicial","conexao":"como conecta ao próximo","cliffhanger":"teaser do próximo"},...]}} Tema: ${tema}. Nicho: ${nicho}. Formato: ${formato}. Público: ${pub}. Todos os 30 episódios.`;
+  const text = await callClaude(prompt, 'btn-serie', 'prog-serie', 'fill-serie');
+  if (!text) return;
+  const d = parseJSON(text);
+  if (!d) { document.getElementById('res-serie').innerHTML = `<div class="output-block">${text}</div>`; return; }
+  await saveToHistory('serie', { tema, nicho, formato }, text);
+  const eps = d.episodios || [];
+  let html = `<div class="glass-card">
+    <div class="card-title">🔗 ${d.serie_nome || 'Série Conectada'}</div>
+    <div style="background:var(--dark3);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:1rem;font-size:13px;color:#aaa"><strong style="color:var(--teal)">Premissa:</strong> ${d.premissa||''}</div>`;
+  eps.slice(0,30).forEach(ep => {
+    html += `<div style="background:var(--dark3);border:1px solid var(--dark4);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="background:rgba(254,44,85,0.15);color:var(--red);font-family:var(--font-display);font-weight:700;font-size:11px;padding:2px 8px;border-radius:999px">EP.${ep.ep}</span>
+        <span style="font-weight:500;font-size:14px">${ep.titulo||''}</span>
+      </div>
+      <div style="font-size:12px;color:#888;margin-bottom:4px">🎣 ${ep.gancho||''}</div>
+      ${ep.cliffhanger ? `<div style="font-size:11px;color:var(--teal)">→ Próximo: ${ep.cliffhanger}</div>` : ''}
+    </div>`;
+  });
+  html += `</div>`;
+  document.getElementById('res-serie').innerHTML = html;
+  toast('Série de 30 dias salva no histórico! 🔗', 'ok');
+}
+
+// ══════════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════════
+const typeLabels = { ideias:'💡 Ideias', roteiro:'🎬 Roteiro', legenda:'✍️ Legenda', hashtags:'# Hashtags', calendario:'📅 Calendário', analisador:'🔬 Análise Viral', serie:'🔗 Série' };
+const typeColors = { ideias:'badge-red', roteiro:'badge-teal', legenda:'badge-amber', hashtags:'badge-green', calendario:'badge-teal', analisador:'badge-green', serie:'badge-amber' };
+
+function filterHistory(type, btn) {
+  historyFilter = type;
+  document.querySelectorAll('#hist-filters .btn').forEach(b => b.style.background='');
+  btn.style.background = 'rgba(254,44,85,0.2)';
+  renderHistory();
+}
+
+function renderHistory() {
+  const filtered = historyFilter === 'all' ? history : history.filter(h => h.type === historyFilter);
+  const el = document.getElementById('history-list');
+  if (!filtered.length) {
+    el.innerHTML = `<div class="history-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>Nenhuma geração encontrada</div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(h => {
+    const preview = typeof h.output === 'string' ? h.output.substring(0,80).replace(/[{}"[\]]/g,'') + '...' : '';
+    const date = new Date(h.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `<div class="history-item" onclick="showHistoryDetail('${h.id}')">
+      <div class="history-item-header">
+        <span class="badge-pill ${typeColors[h.type]||'badge-red'} history-item-type">${typeLabels[h.type]||h.type}</span>
+        <span class="history-item-date">${date}</span>
+      </div>
+      <div class="history-item-preview">${preview}</div>
+    </div>`;
+  }).join('');
+}
+
+function showHistoryDetail(id) {
+  const item = history.find(h => h.id?.toString() === id?.toString());
+  if (!item) return;
+  document.getElementById('modal-title').textContent = typeLabels[item.type] || 'Geração';
+  let content = '';
+  try {
+    const parsed = typeof item.output === 'string' ? JSON.parse(item.output) : item.output;
+    if (Array.isArray(parsed)) {
+      content = parsed.map((x,i) => `<div style="padding:5px 0;border-bottom:1px solid var(--dark4);font-size:13px;color:#ccc">${i+1}. ${x}</div>`).join('');
+    } else if (typeof parsed === 'object') {
+      content = `<pre style="font-size:12px;color:#aaa;white-space:pre-wrap;line-height:1.6">${JSON.stringify(parsed, null, 2)}</pre>`;
+    } else {
+      content = `<div style="white-space:pre-wrap;font-size:13px;color:#ccc;line-height:1.7">${item.output}</div>`;
+    }
+  } catch {
+    content = `<div style="white-space:pre-wrap;font-size:13px;color:#ccc;line-height:1.7">${item.output||''}</div>`;
+  }
+  document.getElementById('modal-content').innerHTML = content;
+  document.getElementById('hist-modal').classList.remove('hidden');
+}
+
+function closeModal() { document.getElementById('hist-modal').classList.add('hidden'); }
+
+// ══════════════════════════════════════════
+// PROFILE UPDATE
+// ══════════════════════════════════════════
+async function updateProfile() {
+  const name = document.getElementById('profile-name').value.trim();
+  const pass = document.getElementById('profile-pass').value;
+  const msg = document.getElementById('profile-msg');
+  if (!supabase || isDemoMode) { userProfile.name = name; updateUI(); msg.style.color='#4ade80'; msg.textContent='Salvo! (modo demo)'; return; }
+  if (name) await supabase.from('profiles').update({ name }).eq('id', currentUser.id);
+  if (pass) {
+    const { error } = await supabase.auth.updateUser({ password: pass });
+    if (error) { msg.style.color='#f87171'; msg.textContent=error.message; return; }
+  }
+  userProfile.name = name; updateUI();
+  msg.style.color='#4ade80'; msg.textContent='Perfil atualizado com sucesso!';
+}
+
+// ══════════════════════════════════════════
+// PAYMENTS
+// ══════════════════════════════════════════
+function assinar(plano) {
+  toast(`Integre o Stripe ou Mercado Pago para processar pagamentos. Veja a seção de integração abaixo. Plano: ${plano}`, 'ok');
+}
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function copy(text) {
+  navigator.clipboard.writeText(text).then(() => toast('Copiado para a área de transferência! 📋', 'ok'));
+}
+
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show ' + type;
+  setTimeout(() => { el.className = ''; }, 3500);
+}
+
+// Close modal on overlay click
+document.getElementById('hist-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
