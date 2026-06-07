@@ -1,7 +1,6 @@
-```json { "version": 2, "routes": [ { "src": "/app", "dest": "/public/app.html" }, { "src": "/", "dest": "/public/index.html" } ] } ```
+`vercel.json`: ```json { "version": 2, "routes": [ { "src": "/app", "dest": "/public/app.html" }, { "src": "/", "dest": "/public/index.html" } ] }
 
-  "headers": [
-    {
+      
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options",       "value": "nosniff" },
