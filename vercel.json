@@ -1,16 +1,4 @@
-{
-"version": 2,
-"routes": [
-{
-"src": "/app",
-"dest": "/public/app.html"
-},
-{
-"src": "/",
-"dest": "/public/index.html"
-
-
- 
+```json { "version": 2, "routes": [ { "src": "/app", "dest": "/public/app.html" }, { "src": "/", "dest": "/public/index.html" } ] } ```
 
   "headers": [
     {
