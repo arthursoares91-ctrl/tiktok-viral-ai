@@ -1,27 +1,17 @@
 {
-  "version": 2,
-  "name": "tiktok-viral-ai",
-  "public": true,
-  "buildCommand": null,
-  "outputDirectory": "."
-  "installCommand": "npm install",
-  "routes": [
-    {
-      "src": "/app",
-      "dest": "/app.html"
-    },
-    {
-      "src": "/app.html",
-      "dest": "/app.html"
-    },
-    {
-      "src": "/",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
+"version": 2,
+"routes": [
+{
+"src": "/app",
+"dest": "/public/app.html"
+},
+{
+"src": "/",
+"dest": "/public/index.html"
+}
+]
+}
+
   ],
   "headers": [
     {
